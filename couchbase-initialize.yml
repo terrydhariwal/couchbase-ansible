@@ -1,0 +1,59 @@
+---
+- name: Couchbase Installation
+  hosts: all
+  user: vagrant
+  gather_facts: False 
+  sudo: true
+  tasks:
+  - name: disable iptables firewall
+    # These do not work 
+    # - name: disable iptables to autostart on boot
+    #   command: chkconfig iptables off
+    # service: name=iptables state=stopped
+    # service: name=ip6tables state=stopped
+    action: service name=iptables state=stopped enabled=no # this works 
+
+  - name: disable ip6tables firewall
+    action: service name=ip6tables state=stopped enabled=no # this works 
+
+  - name: download Couchbase package and check dependencies
+    get_url: 
+      url=http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm 
+      dest=/vagrant/couchbase-server-enterprise.rpm
+      force=no
+
+  - name: Install dependencies
+    yum: name=openssl098e state=present
+  # - name: Install Couchbase .deb file on all machines //Shell is not idempotent
+  #   shell: rpm --install /vagrant/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm
+  - name: Install Couchbase .rpm file on all machines
+    yum: name=/vagrant/couchbase-server-enterprise.rpm state=present
+
+- name: Initialize the cluster and add the nodes to the cluster
+  hosts: master
+  user: vagrant
+  sudo: true 
+  tasks:
+  - name: check couchbase has started
+    service: name=couchbase-server state=started
+  - pause: seconds=10
+
+  - name: Configure main node
+    shell: /opt/couchbase/bin/couchbase-cli cluster-init -c 127.0.0.1:8091  --cluster-init-username={{admin_user}} --cluster-init-password={{admin_password}} --cluster-init-port=8091 --cluster-init-ramsize={{cluster_ram_quota}} -u {{admin_user}} -p {{admin_password}}
+    register: configure_main_node
+  - debug: var=configure_main_node.stdout_lines
+
+  - name: Create shell script for configuring main node
+    action: template src=couchbase-add-nodes.j2 dest=/tmp/addnodes.sh mode=750
+
+  - name: Launch config script
+    action: shell /tmp/addnodes.sh
+
+  - name: Rebalance the cluster
+    shell: /opt/couchbase/bin/couchbase-cli rebalance -c 127.0.0.1:8091 -u {{admin_user}} -p {{admin_password}}
+
+  - name: create bucket {{bucket_name}} with {{num_replicas}} replicas
+    shell: /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 --bucket={{bucket_name}} --bucket-type=couchbase --bucket-port=11211 --bucket-ramsize={{bucket_ram_quota}}  --bucket-replica={{num_replicas}} -u {{admin_user}} -p {{admin_password}}
+
+  # - name: COUCHBASE INSTALL COMPLETE
+  #   debug: msg="Couchbase is installed and ready http://localhost:8091" # pass in IP address here

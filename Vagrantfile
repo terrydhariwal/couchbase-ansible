@@ -1,7 +1,7 @@
 Vagrant.configure("2") do |config|
   
   # Number of nodes to provision
-  numNodes = 4
+  numNodes = 3
 
   # IP Address Base for private network
   ipAddrPrefix = "192.168.56.10"
@@ -14,7 +14,10 @@ Vagrant.configure("2") do |config|
     v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"] # incase I use Ubutu12 see ... http://askubuntu.com/questions/238040/how-do-i-fix-name-service-for-vagrant-client
   end
 
-  # Provision Config for each of the nodes
+  # Download the initial box from this url
+  # config.vm.box_url = "http://puppet-vagrant-boxes.puppetlabs.com/centos-65-x64-virtualbox-puppet.box"
+
+  # Create VMs for each of the nodes
   1.upto(numNodes) do |num|
     nodeName = ("node" + num.to_s).to_sym
     config.vm.define nodeName do |node|
@@ -23,7 +26,18 @@ Vagrant.configure("2") do |config|
       puts "Private network (host only) ip : http://#{ipAddrPrefix + num.to_s}:8091"
       node.vm.provider "virtualbox" do |v|
         v.name = "Couchbase Server Node " + num.to_s
-      end
-    end
-  end
-end
+      end # end of node.vm.provider
+      # Provisioning happens in parallel and does not wait for all machines to be provisioned
+      # Therefore only run once the machine 4 has been created
+      if num == numNodes
+          config.vm.provision :ansible do |ansible|
+              ansible.sudo = true
+              ansible.limit = "all"
+              ansible.verbose = "vvvv"
+              ansible.inventory_path = "ansible_hosts.ini"
+              ansible.playbook = "couchbase-initialize.yml"
+          end # end of config.vm.provision
+      end # end if
+    end # end of config.vm.define
+  end # end of 1.upto(numNodes)
+end #end config
