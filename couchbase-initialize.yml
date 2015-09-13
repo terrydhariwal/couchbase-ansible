@@ -1,4 +1,16 @@
 ---
+- name: Download Couchbase Binary
+  hosts: master
+  user: vagrant
+  gather_facts: False 
+  sudo: true
+  tasks:
+  - name: download Couchbase package and check dependencies
+    get_url: 
+      url=http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm 
+      dest=/vagrant/couchbase-server-enterprise.rpm
+      force=no
+
 - name: Couchbase Installation
   hosts: all
   user: vagrant
@@ -15,12 +27,6 @@
 
   - name: disable ip6tables firewall
     action: service name=ip6tables state=stopped enabled=no # this works 
-
-  - name: download Couchbase package and check dependencies
-    get_url: 
-      url=http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm 
-      dest=/vagrant/couchbase-server-enterprise.rpm
-      force=no
 
   - name: Install dependencies
     yum: name=openssl098e state=present
