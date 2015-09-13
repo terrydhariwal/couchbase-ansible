@@ -5,7 +5,7 @@
   gather_facts: False 
   sudo: true
   tasks:
-  - name: download Couchbase package and check dependencies
+  - name: download Couchbase package
     get_url: 
       url=http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm 
       dest=/vagrant/couchbase-server-enterprise.rpm
