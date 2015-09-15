@@ -1,0 +1,24 @@
+# ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-uninstall.yml
+# ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-uninstall.yml -vvvv
+
+---
+# 
+# Uninstall Couchbase cluster from a single command
+#
+- name: Couchbase Installation
+  hosts: all
+  # user: ec2-user
+  gather_facts: false
+  sudo: true 
+  tasks:
+  - name: Uninstall Couchbase
+    ignore_errors: yes
+    shell: sudo rpm -e couchbase-server
+  - name: Delete files (just to have a fresh install)
+    ignore_errors: yes
+    file: path=/opt/couchbase/ state=absent
+- name: Delete tmp files
+  hosts: master
+  tasks:
+    ignore_errors: yes
+    file: path=/tmp/addnodes.sh

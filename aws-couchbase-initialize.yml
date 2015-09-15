@@ -1,21 +1,22 @@
-# ansible-playbook --inventory-file=ansible_hosts.ini -u vagrant ./couchbase-initialize.yml 
-# ansible-playbook --inventory-file=ansible_hosts.ini -u vagrant ./couchbase-initialize.yml -vvvv
+# ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-initialize.yml
+# ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-initialize.yml -vvvv
+
 ---
 - name: Download Couchbase Binary
-  hosts: master
-  user: vagrant
+  hosts: all
+  # user: ec2-user
   gather_facts: false 
   sudo: true
   tasks:
   - name: download Couchbase package
     get_url: 
       url=http://packages.couchbase.com/releases/3.0.3/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm 
-      dest=/vagrant/couchbase-server-enterprise.rpm
+      dest=/home/ec2-user/couchbase-server-enterprise.rpm
       force=no
 
 - name: Couchbase Installation
   hosts: all
-  user: vagrant
+  # user: ec2-user
   gather_facts: false 
   sudo: true
   tasks:
@@ -30,24 +31,30 @@
   - name: disable ip6tables firewall
     action: service name=ip6tables state=stopped enabled=no # this works 
 
-  - name: Install dependencies
+  - name: Install dependencies #causing an issue
     yum: name=openssl098e state=present
   # - name: Install Couchbase .deb file on all machines //Shell is not idempotent
   #   shell: rpm --install /vagrant/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm
   - name: Install Couchbase .rpm file on all machines
-    yum: name=/vagrant/couchbase-server-enterprise.rpm state=present
+    yum: name=/home/ec2-user/couchbase-server-enterprise.rpm state=present
 
 - name: Initialize the cluster and add the nodes to the cluster
   hosts: master
-  user: vagrant
+  # user: ec2-user
+  gather_facts: false 
   sudo: true 
   tasks:
   - name: check couchbase has started
     service: name=couchbase-server state=started
   - pause: seconds=10
 
-  - name: Configure main node
+  - name: Configure main node's hostname
+    shell: /opt/couchbase/bin/couchbase-cli node-init -c 127.0.0.1:8091 --node-init-hostname={% for host in groups['master'] %}{{ hostvars[host]['ansible_ssh_host'] }}{% endfor %} -u {{admin_user}} -p {{admin_password}}
+    ignore_errors: yes
+
+  - name: Configure cluster using the main node
     shell: /opt/couchbase/bin/couchbase-cli cluster-init -c 127.0.0.1:8091  --cluster-init-username={{admin_user}} --cluster-init-password={{admin_password}} --cluster-init-port=8091 --cluster-init-ramsize={{cluster_ram_quota}} -u {{admin_user}} -p {{admin_password}}
+    ignore_errors: yes
     register: configure_main_node
   - debug: var=configure_main_node.stdout_lines
 

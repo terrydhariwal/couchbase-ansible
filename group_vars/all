@@ -1,6 +1,6 @@
 # Adminisrator user and password
 admin_user: Administrator
-admin_password: password
+admin_password: asdasd
 
 # ram quota for the cluster
 cluster_ram_quota: 256
