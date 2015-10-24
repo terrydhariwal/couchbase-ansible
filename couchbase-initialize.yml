@@ -37,6 +37,10 @@
   - name: Install Couchbase .rpm file on all machines
     yum: name=/vagrant/couchbase-server-enterprise.rpm state=present
 
+  - name: Set swappiness to 0
+    # Set vm.swappiness to 0 in /etc/sysctl.conf
+    sysctl: name=vm.swappiness value=0 state=present
+
 - name: Initialize the cluster and add the nodes to the cluster
   hosts: master
   user: vagrant

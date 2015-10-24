@@ -33,10 +33,14 @@
 
   - name: Install dependencies #causing an issue
     yum: name=openssl098e state=present
-  # - name: Install Couchbase .deb file on all machines //Shell is not idempotent
-  #   shell: rpm --install /vagrant/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm
+    # - name: Install Couchbase .deb file on all machines //Shell is not idempotent
+    #   shell: rpm --install /vagrant/couchbase-server-enterprise-3.0.3-centos6.x86_64.rpm
   - name: Install Couchbase .rpm file on all machines
     yum: name=/home/ec2-user/couchbase-server-enterprise.rpm state=present
+
+  - name: Set swappiness to 0
+    # Set vm.swappiness to 0 in /etc/sysctl.conf
+    sysctl: name=vm.swappiness value=0 state=present
 
 - name: Initialize the cluster and add the nodes to the cluster
   hosts: master
