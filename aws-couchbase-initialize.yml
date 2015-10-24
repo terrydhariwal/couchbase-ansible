@@ -42,6 +42,19 @@
     # Set vm.swappiness to 0 in /etc/sysctl.conf
     sysctl: name=vm.swappiness value=0 state=present
 
+  - name: disable THP inproc and permenantly 1
+    # Add a line to a file if it does not exist, without passing regexp 
+    lineinfile: dest=/etc/rc.local line="for i in /sys/kernel/mm/*transparent_hugepage/enabled; do echo never > $i; done"
+
+  - name: disable THP inproc and permenantly 2
+    lineinfile: dest=/etc/rc.local line="for i in /sys/kernel/mm/*transparent_hugepage/defrag; do echo never > $i; done"
+
+  - name: disable THP inproc and permenantly 3
+    shell: for i in /sys/kernel/mm/*transparent_hugepage/enabled; do echo never > $i; done
+  
+  - name: disable THP inproc and permenantly 4
+    shell: for i in /sys/kernel/mm/*transparent_hugepage/defrag; do echo never > $i; done
+
 - name: Initialize the cluster and add the nodes to the cluster
   hosts: master
   # user: ec2-user
