@@ -2,27 +2,8 @@
 # ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-initialize.yml -vvvv
 
 ---
-- name: Install libcouchbase
-  hosts: app_servers
-  gather_facts: false
-  sudo: true
-  tasks:
-  # - name: download libcouchbase
-  #   get_url: 
-  #     url=http://packages.couchbase.com/clients/c/couchbase-csdk-setup
-  #     dest=/home/ec2-user/couchbase-csdk-setup
-  #     force=no
-  - name: Copy modified shell scriptinstalling libcouchbase
-    action: template src=couchbase-csdk-setup.pl dest=/home/ec2-user/couchbase-csdk-setup mode=750
-
-  - name: Install perl dependency
-    yum: name=perl state=present
-
-  - name: install libcouchbase
-    shell: sudo yes | perl /home/ec2-user/couchbase-csdk-setup
-
 - name: Download Couchbase Binary
-  hosts: all
+  hosts: couchbase_server 
   # user: ec2-user
   gather_facts: false 
   sudo: true
@@ -34,7 +15,7 @@
       force=no
 
 - name: Couchbase Installation
-  hosts: all
+  hosts: couchbase_server
   # user: ec2-user
   gather_facts: false 
   sudo: true
@@ -107,4 +88,26 @@
     shell: /opt/couchbase/bin/couchbase-cli bucket-create -c 127.0.0.1:8091 --bucket={{bucket_name}} --bucket-type=couchbase --bucket-port=11211 --bucket-ramsize={{bucket_ram_quota}}  --bucket-replica={{num_replicas}} -u {{admin_user}} -p {{admin_password}}
 
   - name: COUCHBASE INSTALL COMPLETE
-    debug: msg="Couchbase is installed and ready http://{% for host in groups['master'] %}{{ hostvars[host]['ansible_ssh_host'] }}{% endfor %}:8091"
+    debug: msg="Couchbase is installed and ready http://{% for host in groups['master'] %}{{ hostvars[host]['ansible_ssh_host'] }}{% endfor %}:8091" 
+
+- name: Install libcouchbase
+  hosts: app_servers
+  gather_facts: false
+  sudo: true
+  tasks:
+  # - name: download libcouchbase
+  #   get_url: 
+  #     url=http://packages.couchbase.com/clients/c/couchbase-csdk-setup
+  #     dest=/home/ec2-user/couchbase-csdk-setup
+  #     force=no
+  - name: Copy modified shell scriptinstalling libcouchbase
+    action: template src=couchbase-csdk-setup.pl dest=/home/ec2-user/couchbase-csdk-setup mode=750
+
+  - name: Install perl dependency
+    yum: name=perl state=present
+
+  - name: install libcouchbase
+    shell: sudo yes | perl /home/ec2-user/couchbase-csdk-setup
+
+  - name: start load generator
+

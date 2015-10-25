@@ -6,7 +6,7 @@
 # Uninstall Couchbase cluster from a single command
 #
 - name: Couchbase Installation
-  hosts: all
+  hosts: couchbase_server
   # user: ec2-user
   gather_facts: false
   sudo: true 
