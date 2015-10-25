@@ -2,6 +2,25 @@
 # ansible-playbook --inventory-file=aws_ansible_hosts.ini -u ec2-user ./aws-couchbase-initialize.yml -vvvv
 
 ---
+- name: Install libcouchbase
+  hosts: app_servers
+  gather_facts: false
+  sudo: true
+  tasks:
+  # - name: download libcouchbase
+  #   get_url: 
+  #     url=http://packages.couchbase.com/clients/c/couchbase-csdk-setup
+  #     dest=/home/ec2-user/couchbase-csdk-setup
+  #     force=no
+  - name: Copy modified shell scriptinstalling libcouchbase
+    action: template src=couchbase-csdk-setup.pl dest=/home/ec2-user/couchbase-csdk-setup mode=750
+
+  - name: Install perl dependency
+    yum: name=perl state=present
+
+  - name: install libcouchbase
+    shell: sudo yes | perl /home/ec2-user/couchbase-csdk-setup
+
 - name: Download Couchbase Binary
   hosts: all
   # user: ec2-user
